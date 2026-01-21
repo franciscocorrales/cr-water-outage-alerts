@@ -2,7 +2,7 @@
 
 **Extension name (store / browser): Cortes de Agua CR – Avisos**
 
-Unofficial Chrome (Manifest V3) extension that monitors the public AyA Costa Rica service information and notifies you when there are scheduled water service interruptions for a specific location.
+Unofficial Chrome (Manifest V3) extension that monitors public water service information in Costa Rica and notifies you when there are scheduled water service interruptions for a specific location.
 
 The user‑visible name, descriptions and notifications inside the browser are in **Spanish**, to better match Costa Rican users and the Chrome Web Store audience, but the **codebase and documentation are in English**.
 
@@ -14,9 +14,9 @@ Currently it polls periodically and shows a desktop notification whenever an ale
 
 Initial minimal version (MVP):
 
-- Periodically (every minute) checks for outages for a fixed AyA location (province/canton/district).
+- Periodically (every minute) checks for outages for a fixed water service location (province/canton/district).
 - Avoids repeating identical notifications for the same alert message.
-- Does not collect or send any personal data: it only calls AyA's public API.
+- Does not collect or send any personal data: it only calls a public water service API.
 
 Planned improvements:
 
@@ -38,7 +38,7 @@ Planned improvements:
 4. Click **Load unpacked**.
 5. Select this repository folder.
 
-Chrome will load the extension using `manifest.json` and the background service worker `background.js`. From that moment it will start polling the AyA API periodically.
+Chrome will load the extension using `manifest.json` and the background service worker `background.js`. From that moment it will start polling the configured public API periodically.
 
 ## License
 
