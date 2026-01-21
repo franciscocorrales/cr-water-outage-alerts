@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Cortes de Agua CR – Avisos",
-  "description": "Unofficial AyA water outage alerts for Costa Rica. Periodically checks AyA's public API for scheduled interruptions and notifies you.",
+  "description": "Unofficial water outage alerts for Costa Rica. Periodically checks a public water service API for scheduled interruptions and notifies you.",
   "version": "0.1.0",
   "permissions": [
     "alarms",
