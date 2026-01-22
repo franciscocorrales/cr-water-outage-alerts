@@ -91,7 +91,10 @@ async function checkForOutages() {
       return;
     }
 
-    await showOutageNotification(alerta, interruptions);
+    const { title, message, count } = buildOutageNotificationText(alerta, interruptions);
+
+    await showOutageNotification(title, message, count);
+    notifyActiveTabOutage(title, message, interruptions);
     await chrome.storage.local.set({ [LAST_ALERT_SIGNATURE_KEY]: currentSignature });
   } catch (error) {
     console.error('Error checking water outages:', error);
@@ -117,7 +120,7 @@ function buildInterruptionsSignature(interruptions) {
 }
 
 /**
- * Show a notification summarizing the upcoming interruptions.
+ * Build the notification title and message summarizing the upcoming interruptions.
  *
  * In the future we can transform the date strings (e.g. "19/01/2026 22:00")
  * into more natural language like "from Tuesday 19, 10pm to Wednesday
@@ -125,8 +128,9 @@ function buildInterruptionsSignature(interruptions) {
  *
  * @param {AyaAlert | null} alerta
  * @param {AyaInterruption[]} interruptions
+ * @returns {{ title: string, message: string, count: number }}
  */
-async function showOutageNotification(alerta, interruptions) {
+function buildOutageNotificationText(alerta, interruptions) {
   const count = interruptions.length;
   const first = interruptions[0];
 
@@ -142,6 +146,18 @@ async function showOutageNotification(alerta, interruptions) {
       `Se han programado ${count} cortes de agua en tu zona. ` +
       `Próximo: ${first.inicioAfectacion} - ${first.finAfectacion}.`;
   }
+
+  return { title, message, count };
+}
+
+/**
+ * Show a system notification summarizing the upcoming interruptions.
+ *
+ * @param {string} title
+ * @param {string} message
+ * @param {number} count
+ */
+async function showOutageNotification(title, message, count) {
 
   console.debug('Water outage notification - about to show', { title, message, count });
 
@@ -162,6 +178,46 @@ async function showOutageNotification(alerta, interruptions) {
       }
     }
   );
+}
+
+/**
+ * Inform the active tab (content script) about the outage so it can
+ * display an in-page banner/modal.
+ *
+ * @param {string} title
+ * @param {string} message
+ * @param {AyaInterruption[]} interruptions
+ */
+function notifyActiveTabOutage(title, message, interruptions) {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (chrome.runtime.lastError) {
+      console.error('Water outage tabs query error', chrome.runtime.lastError);
+      return;
+    }
+
+    const activeTab = tabs && tabs[0];
+    if (!activeTab || activeTab.id == null) {
+      return;
+    }
+
+    chrome.tabs.sendMessage(
+      activeTab.id,
+      {
+        type: 'WATER_OUTAGE_ALERT',
+        payload: {
+          title,
+          text: message,
+          interruptions
+        }
+      },
+      () => {
+        if (chrome.runtime.lastError) {
+          // This is expected on pages where the content script cannot run.
+          console.debug('Water outage content script not available in tab', activeTab.id, chrome.runtime.lastError.message);
+        }
+      }
+    );
+  });
 }
 
 // Simple helper to test notifications from the service worker console.
@@ -187,6 +243,27 @@ function showTestNotification() {
     }
   );
 }
+
+// Allow content scripts to trigger a fresh outage check on demand
+// (e.g. on every page load) so users are more likely to see alerts
+// while they are actively browsing.
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!message || message.type !== 'TRIGGER_WATER_OUTAGE_CHECK') {
+    return;
+  }
+
+  checkForOutages()
+    .then(() => {
+      sendResponse({ ok: true });
+    })
+    .catch((error) => {
+      console.error('Error in TRIGGER_WATER_OUTAGE_CHECK handler', error);
+      sendResponse({ ok: false, error: String(error) });
+    });
+
+  // Keep the message channel open for the async response.
+  return true;
+});
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create(ALARM_NAME, { periodInMinutes: DEFAULT_PERIOD_MINUTES });
