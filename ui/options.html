@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Configuración - Cortes de Agua CR</title>
+  <link rel="stylesheet" href="../css/options.css">
+</head>
+<body>
+  <h1>Configuración</h1>
+
+  <div class="section">
+    <h2>Formato de Hora</h2>
+    <div class="option-group">
+      <label>
+        <input type="radio" name="timeFormat" value="12h">
+        12 Horas (am/pm)
+      </label>
+      <label>
+        <input type="radio" name="timeFormat" value="24h">
+        24 Horas
+      </label>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Ubicaciones Monitoreadas</h2>
+    <p style="font-size: 12px; color: #666; margin-bottom: 12px;">
+      Seleccione Provincia, Cantón y Distrito para agregar a su lista de alertas.
+    </p>
+
+    <div style="background: #f9f9f9; padding: 12px; border-radius: 4px; margin-bottom: 12px;">
+      <select id="provinceSelect">
+        <option value="">Seleccionar Provincia...</option>
+      </select>
+      <select id="cantonSelect" disabled>
+        <option value="">Seleccionar Cantón...</option>
+      </select>
+      <select id="districtSelect" disabled>
+        <option value="">Seleccionar Distrito...</option>
+      </select>
+      <button id="addLocationBtn" class="secondary" style="width: 100%; margin-top: 5px;">
+        + Agregar Ubicación
+      </button>
+    </div>
+
+    <div id="locationList" class="location-list">
+      <!-- Items will be added here -->
+    </div>
+    <div id="noLocationsMsg" style="font-size: 12px; color: #999; padding: 10px; text-align: center;">
+      No hay ubicaciones seleccionadas (sin alertas).
+    </div>
+  </div>
+
+  <div class="section" style="border-bottom: none;">
+    <button id="saveBtn">Guardar Configuración</button>
+    <div id="statusMsg" class="status-msg"></div>
+  </div>
+
+  <script src="../js/locations.js"></script>
+  <script src="../js/options.js"></script>
+</body>
+</html>
