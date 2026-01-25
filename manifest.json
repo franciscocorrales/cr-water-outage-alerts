@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Cortes de Agua CR – Avisos",
   "description": "Unofficial water outage alerts for Costa Rica. Periodically checks a public water service API for scheduled interruptions and notifies you.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "permissions": [
     "alarms",
     "notifications",
@@ -13,12 +13,13 @@
     "https://apigat.aya.go.cr/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "js/background.js"
   },
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js": ["content.js"],
+      "css": ["css/content.css"],
+      "js": ["js/content.js"],
       "run_at": "document_idle"
     }
   ],
@@ -29,7 +30,7 @@
   },
   "action": {
     "default_title": "Cortes de Agua CR – Avisos",
-    "default_popup": "popup.html",
+    "default_popup": "ui/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -37,7 +38,7 @@
     }
   },
   "options_ui": {
-    "page": "options.html",
+    "page": "ui/options.html",
     "open_in_tab": false
   }
 }
