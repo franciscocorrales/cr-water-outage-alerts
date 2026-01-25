@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Water Drop Background -->
+  <path d="M64 4 C64 4 16 50 16 82 A48 48 0 0 0 112 82 C112 50 64 4 64 4 Z" fill="#03A9F4"/>
+  
+  <!-- Shadow/Highlight for depth (optional, keeping it flat for now) -->
+  
+  <!-- Alert Symbol (Exclamation Mark in a Warning Triangle look, or just the mark) -->
+  <!-- Let's put a white exclamation mark inside a warning circle or just directly on the drop -->
+  
+  <!-- Warning Circle Background (Orange/Red) -->
+  <circle cx="88" cy="88" r="30" fill="#FFC107" stroke="#FFFFFF" stroke-width="4"/>
+  
+  <!-- Exclamation Mark -->
+  <path d="M88 68 L88 88" stroke="#37474F" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="88" cy="98" r="3.5" fill="#37474F"/>
+</svg>
