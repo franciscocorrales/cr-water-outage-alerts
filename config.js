@@ -21,7 +21,8 @@ const AYA_CONFIG = {
     noInterruptions: 'No existen interrupciones para esta ubicación'
   },
   storageKeys: {
-    lastAlertSignature: 'lastAlertSignature'
+    lastAlertSignature: 'lastAlertSignature',
+    latestOutageData: 'latestOutageData'
   },
   alarms: {
     name: 'checkAyaOutages',
