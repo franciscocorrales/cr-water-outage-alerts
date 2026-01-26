@@ -15,7 +15,7 @@ if (window.top === window) {
   }
 }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, _sendResponse) => {
   if (!message || message.type !== 'WATER_OUTAGE_ALERT') {
     return;
   }
@@ -28,17 +28,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   showOutageBanner(title || 'Cortes de agua programados', text);
 });
 
-function showOutageBanner(title, text) {
+/**
+ * Displays or updates the outage banner on the page.
+ * @param {string} title - The title of the alert
+ * @param {string} message - The main text of the alert
+ */
+function showOutageBanner(title, message) {
   // Reuse the same banner if it already exists.
   let existing = document.getElementById(OUTAGE_BANNER_ID);
   if (existing) {
     const messageEl = existing.querySelector('[data-outage-message]');
     if (messageEl) {
-      messageEl.textContent = text;
+      messageEl.textContent = message;
     }
     existing.style.display = 'flex';
     return;
   }
+
 
   const container = document.createElement('div');
   container.id = OUTAGE_BANNER_ID;

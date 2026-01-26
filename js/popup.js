@@ -3,13 +3,15 @@
 // We'll just hardcode the key or duplicate the config logic for simplicity 
 // unless we change the build system. For now, duplication is safest/easiest 
 // without a bundler.
-const STORAGE_KEY_DATA = 'latestOutageData';
-const STORAGE_KEY_SIGNATURE = 'lastAlertSignature';
+// Use shared config keys.
+const STORAGE_KEY_DATA = AYA_CONFIG.storageKeys.latestOutageData;
+const STORAGE_KEY_SIGNATURE = AYA_CONFIG.storageKeys.lastAlertSignature;
 
 document.addEventListener('DOMContentLoaded', async () => {
   const contentEl = document.getElementById('content');
   const optionsBtn = document.getElementById('openOptions');
   const clearBtn = document.getElementById('clearNotifications');
+  const refreshBtn = document.getElementById('refreshData');
 
   if (optionsBtn) {
     optionsBtn.addEventListener('click', () => {
@@ -18,6 +20,30 @@ document.addEventListener('DOMContentLoaded', async () => {
        } else {
          window.open(chrome.runtime.getURL('ui/options.html'));
        }
+    });
+  }
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', async () => {
+      renderEmpty(contentEl, 'Actualizando datos...');
+      try {
+        const response = await chrome.runtime.sendMessage({ type: 'TRIGGER_WATER_OUTAGE_CHECK' });
+        if (response && response.ok) {
+           // Reload data from storage after background update
+           const data = await chrome.storage.local.get(STORAGE_KEY_DATA);
+           const outageData = data[STORAGE_KEY_DATA];
+           if (!outageData) {
+             renderEmpty(contentEl, 'No hay información disponible.');
+           } else {
+             renderOutages(contentEl, outageData);
+           }
+        } else {
+          renderEmpty(contentEl, 'Error al actualizar.');
+        }
+      } catch (err) {
+        console.error(err);
+        renderEmpty(contentEl, 'Error de conexión.');
+      }
     });
   }
 

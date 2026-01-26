@@ -7,8 +7,13 @@ const noLocationsMsg = document.getElementById('noLocationsMsg');
 const saveBtn = document.getElementById('saveBtn');
 const statusMsg = document.getElementById('statusMsg');
 
+// Notification Checkboxes
+const browserNotifCheck = document.getElementById('browserNotifCheck');
+const osNotifCheck = document.getElementById('osNotifCheck');
+
 let currentSettings = {
-  timeFormat: '12h',
+  timeFormat: AYA_CONFIG.defaults.timeFormat,
+  notifications: { ...AYA_CONFIG.defaults.notifications },
   monitoredLocations: []
 };
 
@@ -28,24 +33,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadSettings() {
-  const result = await chrome.storage.local.get('settings');
-  if (result.settings) {
-    currentSettings = result.settings;
+  const result = await chrome.storage.local.get(AYA_CONFIG.storageKeys.settings);
+  if (result[AYA_CONFIG.storageKeys.settings]) {
+    // Merge with defaults to ensure new keys exist
+    currentSettings = { 
+      ...currentSettings, 
+      ...result[AYA_CONFIG.storageKeys.settings] 
+    };
+    
+    // Ensure nested objects are merged correctly if missing
+    if (!currentSettings.notifications) {
+      currentSettings.notifications = { ...AYA_CONFIG.defaults.notifications };
+    }
   } else {
     // Default fallback if nothing stored
-    currentSettings = {
-      timeFormat: '12h',
-      // Default to the one used for testing implicitly if desired, 
-      // or empty. The user script had hardcoded Alajuela/San Ramon/San Juan.
-      monitoredLocations: [
-        { 
-          provinceId: '2', 
-          cantonId: '29', 
-          districtId: '231', 
-          name: 'Alajuela / San Ramón / San Juan' 
-        }
-      ]
-    };
+    currentSettings.monitoredLocations = [
+      { 
+        provinceId: '2', 
+        cantonId: '29', 
+        districtId: '231', 
+        name: 'Alajuela / San Ramón / San Juan' 
+      }
+    ];
   }
 }
 
@@ -53,6 +62,10 @@ function renderUI() {
   // Time Format
   const radio = document.querySelector(`input[name="timeFormat"][value="${currentSettings.timeFormat}"]`);
   if (radio) radio.checked = true;
+
+  // Notifications
+  if (browserNotifCheck) browserNotifCheck.checked = currentSettings.notifications.browser;
+  if (osNotifCheck) osNotifCheck.checked = currentSettings.notifications.os;
 
   // Locations List
   renderLocationList();
@@ -198,7 +211,11 @@ async function saveSettings() {
     currentSettings.timeFormat = selectedTime.value;
   }
 
-  await chrome.storage.local.set({ settings: currentSettings });
+  // Update Notification settings
+  if (browserNotifCheck) currentSettings.notifications.browser = browserNotifCheck.checked;
+  if (osNotifCheck) currentSettings.notifications.os = osNotifCheck.checked;
+
+  await chrome.storage.local.set({ [AYA_CONFIG.storageKeys.settings]: currentSettings });
   
   // Notify background logic to reload settings/re-check immediately?
   chrome.runtime.sendMessage({ type: 'SETTINGS_UPDATED' });

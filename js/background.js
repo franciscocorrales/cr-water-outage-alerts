@@ -92,63 +92,112 @@ function formatInterruptionDates(interruption, timeFormat) {
   };
 }
 
+/**
+ * Parses a date string in "dd/MM/yyyy HH:mm" format.
+ * @param {string} dateStr 
+ * @returns {Date|null}
+ */
+function parseAyaDate(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  // Expected: 24/01/2026 22:00
+  const parts = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/);
+  if (!parts) return null;
+  
+  const [_, day, month, year, hour, minute] = parts;
+  return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10), parseInt(hour, 10), parseInt(minute, 10));
+}
+
+/**
+ * Checks if the outage ending time is in the future.
+ * @param {AyaInterruption} interruption 
+ * @returns {boolean}
+ */
+function isFutureOrActive(interruption) {
+  const end = parseAyaDate(interruption.finAfectacion);
+  // If we can't parse it, assume it's valid/future to be safe
+  if (!end) return true; 
+  return end > new Date();
+}
+
+/**
+ * Retrieves settings from storage or returns defaults.
+ * @returns {Promise<Object>}
+ */
+async function getSettings() {
+  const stored = await chrome.storage.local.get(['settings']);
+  const settings = stored.settings || {};
+  
+  return {
+    timeFormat: settings.timeFormat || AYA_CONFIG.defaults.timeFormat,
+    notifications: {
+      ...AYA_CONFIG.defaults.notifications,
+      ...(settings.notifications || {})
+    },
+    monitoredLocations: settings.monitoredLocations || []
+  };
+}
+
+/**
+ * Fetches outage info for all configured locations.
+ * @param {Array} locations 
+ * @returns {Promise<Object>} Object containing all interruptions and last alert info
+ */
+async function fetchAllLocations(locations) {
+  let allInterruptions = [];
+  let lastAlertInfo = null;
+
+  for (const loc of locations) {
+    const data = await fetchOutageInfo(loc);
+    if (!data) continue;
+
+    /** @type {AyaResponse} */
+    const response = /** @type {any} */ (data);
+    const rawMessage = response.alerta && response.alerta.message ? response.alerta.message : '';
+    
+    // If explicit "No interruptions", we ignore this location
+    if (rawMessage && rawMessage.includes(NO_INTERRUPTIONS_PHRASE)) {
+      continue;
+    }
+
+    if (response.entidad && Array.isArray(response.entidad)) {
+      const locInterruptions = response.entidad
+        .filter(isFutureOrActive)
+        .map(i => ({
+          ...i,
+          locationName: loc.name
+        }));
+      allInterruptions = allInterruptions.concat(locInterruptions);
+    }
+    
+    if (response.alerta) lastAlertInfo = response.alerta;
+  }
+  
+  return { allInterruptions, lastAlertInfo };
+}
+
 async function checkForOutages() {
   try {
     // 1. Get Settings
-    const stored = await chrome.storage.local.get(['settings', LAST_ALERT_SIGNATURE_KEY]);
-    const settings = stored.settings || {
-      timeFormat: '12h',
-      // Default location if none configured (San Ramón, San Juan)
-      monitoredLocations: [{ provinceId: '2', cantonId: '29', districtId: '231', name: 'San Ramón' }]
-    };
+    const settings = await getSettings();
+    const monitoredLocations = settings.monitoredLocations;
 
-    const monitoredLocations = settings.monitoredLocations || [];
     if (monitoredLocations.length === 0) {
       console.debug('No monitored locations configured.');
-      // Clear legacy data?
       return;
     }
 
     // 2. Fetch all locations
-    let allInterruptions = [];
-    let lastAlertInfo = null; // Store one alert object just in case
-
-    for (const loc of monitoredLocations) {
-      const data = await fetchOutageInfo(loc);
-      if (!data) continue;
-
-      /** @type {AyaResponse} */
-      const response = /** @type {any} */ (data);
-      const rawMessage = response.alerta && response.alerta.message ? response.alerta.message : '';
-      
-      // If explicit "No interruptions", we ignore this location
-      if (rawMessage && rawMessage.includes(NO_INTERRUPTIONS_PHRASE)) {
-        continue;
-      }
-
-      if (response.entidad && Array.isArray(response.entidad)) {
-        const locInterruptions = response.entidad.map(i => ({
-          ...i,
-          locationName: loc.name
-        }));
-        allInterruptions = allInterruptions.concat(locInterruptions);
-      }
-      
-      if (response.alerta) lastAlertInfo = response.alerta;
-    }
+    const { allInterruptions, lastAlertInfo } = await fetchAllLocations(monitoredLocations);
 
     // 3. Process Results
-    // Format dates according to settings
     const formattedInterruptions = allInterruptions.map(i => 
       formatInterruptionDates(i, settings.timeFormat)
     );
 
     // If no interruptions found across all locations
     if (formattedInterruptions.length === 0) {
-       // Reset signature if we went from outages -> no outages
        await chrome.storage.local.set({ 
          [LAST_ALERT_SIGNATURE_KEY]: buildInterruptionsSignature([]),
-         // Also update latest data so popup shows "No outages"
          [LATEST_OUTAGE_DATA_KEY]: {
             alerta: { message: NO_INTERRUPTIONS_PHRASE },
             interruptions: [],
@@ -160,20 +209,25 @@ async function checkForOutages() {
 
     // 4. Check for changes
     const currentSignature = buildInterruptionsSignature(formattedInterruptions);
+    const stored = await chrome.storage.local.get(LAST_ALERT_SIGNATURE_KEY);
     const lastSignature = stored[LAST_ALERT_SIGNATURE_KEY];
 
     const { title, message, count } = buildOutageNotificationText(lastAlertInfo, formattedInterruptions);
 
-    // Always notify the active tab so the banner appears/updates on page load.
-    notifyActiveTabOutage(title, message, formattedInterruptions);
+    // Notify the active tab if enabled
+    if (settings.notifications.browser) {
+      notifyActiveTabOutage(title, message, formattedInterruptions);
+    }
 
     // Avoid spamming system notifications with the same set of interruptions.
     if (lastSignature === currentSignature) {
       return;
     }
 
-    // Commented out as requested - OS notifications disabled for now
-    // await showOutageNotification(title, message, count);
+    // Notify OS if enabled
+    if (settings.notifications.os) {
+      await showOutageNotification(title, message, count);
+    }
     
     await chrome.storage.local.set({ 
       [LAST_ALERT_SIGNATURE_KEY]: currentSignature,

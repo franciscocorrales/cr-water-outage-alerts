@@ -7,11 +7,7 @@
 const AYA_CONFIG = {
   api: {
     baseUrl: 'https://apigat.aya.go.cr/sitio/api/SitioWeb/Interrupciones',
-    location: {
-      provinceId: 2, // hardcoded for testing
-      cantonId: 29, // hardcoded for testing
-      districtId: 231 // hardcoded for testing
-    },
+    // Dynamic locations are now handled in settings, not hardcoded here.
     dateRange: {
       from: '',
       to: ''
@@ -22,13 +18,21 @@ const AYA_CONFIG = {
   },
   storageKeys: {
     lastAlertSignature: 'lastAlertSignature',
-    latestOutageData: 'latestOutageData'
+    latestOutageData: 'latestOutageData',
+    settings: 'settings'
   },
   alarms: {
     name: 'checkAyaOutages',
     defaultPeriodMinutes: 1
   },
+  defaults: {
+    timeFormat: '12h',
+    notifications: {
+      browser: true,
+      os: true
+    }
+  },
   dev: {
-    pollIntervalMs: 10_000 // Development-only: poll every 10s for testing
+    pollIntervalMs: 10_000
   }
 };
