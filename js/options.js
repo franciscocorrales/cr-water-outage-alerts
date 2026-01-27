@@ -11,8 +11,12 @@ const statusMsg = document.getElementById('statusMsg');
 const browserNotifCheck = document.getElementById('browserNotifCheck');
 const osNotifCheck = document.getElementById('osNotifCheck');
 
+// Interval Input
+const checkIntervalInput = document.getElementById('checkIntervalInput');
+
 let currentSettings = {
   timeFormat: AYA_CONFIG.defaults.timeFormat,
+  checkIntervalMinutes: AYA_CONFIG.defaults.checkIntervalMinutes,
   notifications: { ...AYA_CONFIG.defaults.notifications },
   monitoredLocations: []
 };
@@ -72,6 +76,11 @@ function renderUI() {
   // Time Format
   const radio = document.querySelector(`input[name="timeFormat"][value="${currentSettings.timeFormat}"]`);
   if (radio) radio.checked = true;
+
+  // Check Interval
+  if (checkIntervalInput) {
+    checkIntervalInput.value = currentSettings.checkIntervalMinutes || AYA_CONFIG.defaults.checkIntervalMinutes;
+  }
 
   // Notifications
   if (browserNotifCheck) browserNotifCheck.checked = currentSettings.notifications.browser;
@@ -219,6 +228,14 @@ async function saveSettings() {
   const selectedTime = document.querySelector('input[name="timeFormat"]:checked');
   if (selectedTime) {
     currentSettings.timeFormat = selectedTime.value;
+  }
+
+  // Update Check Interval
+  if (checkIntervalInput) {
+    const val = parseInt(checkIntervalInput.value, 10);
+    if (!isNaN(val) && val > 0) {
+      currentSettings.checkIntervalMinutes = val;
+    }
   }
 
   // Update Notification settings

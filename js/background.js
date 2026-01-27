@@ -129,6 +129,7 @@ async function getSettings() {
   
   return {
     timeFormat: settings.timeFormat || AYA_CONFIG.defaults.timeFormat,
+    checkIntervalMinutes: settings.checkIntervalMinutes || AYA_CONFIG.defaults.checkIntervalMinutes,
     notifications: {
       ...AYA_CONFIG.defaults.notifications,
       ...(settings.notifications || {})
@@ -405,20 +406,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   
   if (message.type === 'SETTINGS_UPDATED') {
-    console.debug('Settings updated, checking outages...');
-    checkForOutages();
+    console.debug('Settings updated, re-scheduling alarm and checking outages...');
+    scheduleAlarm().then(checkForOutages);
   }
 });
 
+/**
+ * Creates/Updates the alarm based on the current settings.
+ */
+async function scheduleAlarm() {
+  const settings = await getSettings();
+  const period = settings.checkIntervalMinutes && settings.checkIntervalMinutes > 0
+    ? settings.checkIntervalMinutes
+    : DEFAULT_PERIOD_MINUTES;
+  
+  console.debug(`Scheduling alarm '${ALARM_NAME}' every ${period} minutes.`);
+  chrome.alarms.create(ALARM_NAME, { periodInMinutes: period });
+}
+
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.alarms.create(ALARM_NAME, { periodInMinutes: DEFAULT_PERIOD_MINUTES });
-  // Run an immediate check on install.
-  checkForOutages();
+  scheduleAlarm().then(checkForOutages);
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  chrome.alarms.create(ALARM_NAME, { periodInMinutes: DEFAULT_PERIOD_MINUTES });
-  checkForOutages();
+  scheduleAlarm().then(checkForOutages);
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {

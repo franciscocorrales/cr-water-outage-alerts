@@ -23,10 +23,11 @@ const AYA_CONFIG = {
   },
   alarms: {
     name: 'checkAyaOutages',
-    defaultPeriodMinutes: 1
+    defaultPeriodMinutes: 60
   },
   defaults: {
     timeFormat: '12h',
+    checkIntervalMinutes: 60,
     notifications: {
       browser: true,
       os: true
