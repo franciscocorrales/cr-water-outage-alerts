@@ -46,15 +46,25 @@ async function loadSettings() {
       currentSettings.notifications = { ...AYA_CONFIG.defaults.notifications };
     }
   } else {
-    // Default fallback if nothing stored
-    currentSettings.monitoredLocations = [
-      { 
-        provinceId: '2', 
-        cantonId: '29', 
-        districtId: '231', 
-        name: 'Alajuela / San Ramón / San Juan' 
-      }
-    ];
+    // Default fallback if nothing stored: load all defined locations
+    const allDefaults = [];
+    if (window.AYA_LOCATIONS && AYA_LOCATIONS.provinces) {
+      Object.values(AYA_LOCATIONS.provinces).forEach(prov => {
+        if (!prov.cantons) return;
+        Object.values(prov.cantons).forEach(canton => {
+          if (!canton.districts) return;
+          Object.values(canton.districts).forEach(dist => {
+            allDefaults.push({
+              provinceId: String(prov.id),
+              cantonId: String(canton.id),
+              districtId: String(dist.id),
+              name: `${prov.name} / ${canton.name} / ${dist.name}`
+            });
+          });
+        });
+      });
+    }
+    currentSettings.monitoredLocations = allDefaults;
   }
 }
 

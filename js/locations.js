@@ -42,6 +42,15 @@ const AYA_LOCATIONS = {
           name: 'San Ramón',
           districts: {
             /**
+             * Distrito: San Ramón
+             * FkDistrito = 229
+             */
+            229: {
+              id: 229,
+              name: 'San Ramón'
+            },
+
+            /**
              * Distrito: San Juan
              * FkDistrito = 231
              */
@@ -57,6 +66,15 @@ const AYA_LOCATIONS = {
             232: {
               id: 232,
               name: 'Piedades Norte'
+            },
+
+            /**
+             * Distrito: San Rafael
+             * FkDistrito = 234
+             */
+            234: {
+              id: 234,
+              name: 'San Rafael'
             }
           }
         },
