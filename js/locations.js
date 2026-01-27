@@ -9,7 +9,7 @@
  * added over time, and a future options UI can read from this
  * structure to let users pick multiple areas to monitor.
  */
-const AYA_LOCATIONS = {
+window.AYA_LOCATIONS = {
   provinces: {
     /**
      * Provincia: San José
