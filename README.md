@@ -51,6 +51,14 @@ The project structure is organized as follows:
 - `js/content.js`: Injected script that displays the alert banner on websites.
 - `js/config.js`: Centralized constants and defaults.
 
+## Packaging
+
+To create a release ready for the Chrome Web Store, run the following command in the project root:
+
+```bash
+zip -r crwateroutagealerts.zip . -x "*.git*"
+```
+
 ## License
 
 This project is licensed under **GPL-3.0**. See the `LICENSE` file for details.
