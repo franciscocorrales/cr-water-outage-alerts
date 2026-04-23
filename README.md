@@ -53,11 +53,15 @@ The project structure is organized as follows:
 
 ## Packaging
 
-To create a release ready for the Chrome Web Store, run the following command in the project root:
+1. Create the zip (run from the project root):
 
-```bash
-zip -r crwateroutagealerts.zip . -x "*.git*"
-```
+   ```bash
+   zip -r crwateroutagealerts.zip . -x "*.git*"
+   ```
+
+2. Go to the [Chrome Web Store Developer Console](https://chrome.google.com/webstore/devconsole/).
+3. Select the extension, click **Package** → **Upload new package**, and upload the zip.
+4. Click **Submit for review**.
 
 ## License
 
